@@ -1,14 +1,9 @@
-FROM jenkins/jenkins:lts
-USER root
-
-# Install tools
-RUN apt-get update && apt-get install -y maven unzip curl
-
-# Install Docker CLI
-RUN curl -fsSL https://get.docker.com | sh
-
-# Install AWS CLI (Apple Silicon ARM Version)
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip" \
-    && unzip awscliv2.zip \
-    && ./aws/install \
-    && rm -rf aws awscliv2.zip
+# Use a standard Java 17 base image (adjust the version if you use Java 21 or 11)
+FROM eclipse-temurin:21.0.10_7-jdk-noble
+VOLUME /tmp
+# Copy the built JAR file into the image
+COPY target/*.jar app.jar
+# Expose your application port
+EXPOSE 8080
+# Run the application
+ENTRYPOINT ["java","-jar","/app.jar"]
