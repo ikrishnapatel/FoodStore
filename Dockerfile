@@ -1,16 +1,11 @@
 FROM jenkins/jenkins:lts
 USER root
 
-# Install Maven for Spring Boot and Unzip for AWS CLI
 RUN apt-get update && apt-get install -y maven unzip curl
-
-# Install Docker CLI so Jenkins can run 'docker build' inside the pipeline
 RUN curl -fsSL https://get.docker.com | sh
 
-# Install AWS CLI (Apple Silicon ARM Version) so Jenkins can securely log into Amazon ECR
+# IMPORTANT: This MUST say aarch64 for your Mac!
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip" \
     && unzip awscliv2.zip \
     && ./aws/install \
     && rm -rf aws awscliv2.zip
-
-# DO NOT put 'USER jenkins' here. Leave it as root!
