@@ -1,3 +1,6 @@
 spring:
   application:
     name: Bookstore
+
+server:
+  port:8081
