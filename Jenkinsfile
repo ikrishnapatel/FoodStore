@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    tools {
+            maven 'M3' // This must match the name you typed in Step 1
+        }
+
+
     environment {
         AWS_REGION = 'us-east-1' // 1. Change to your region
         AWS_ACCOUNT_ID = '424227905540' // 2. Replace with your 12-digit AWS Account ID
@@ -11,13 +16,14 @@ pipeline {
     }
 
     stages {
-        stage('1. Compile Java') {
-            steps {
-                echo 'Compiling Spring Boot application...'
-                // Uses the Maven you installed in your custom Jenkins Dockerfile
-                sh 'mvn clean package -DskipTests'
-            }
-        }
+
+        stage('Build') {
+                        steps {
+                            echo 'Compiling Spring Boot application...'
+                            sh 'mvn clean package -DskipTests'
+                        }
+                    }
+
 
         stage('2. Build Docker Image') {
             steps {
