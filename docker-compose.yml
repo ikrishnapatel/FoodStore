@@ -1,0 +1,7 @@
+services:
+  jenkins:
+    build: .
+    container_name: ecstatic_engelbart_v2
+    user: root  # <--- Add this right here
+    ports:
+      - "8081:8080"
