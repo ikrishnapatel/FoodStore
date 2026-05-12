@@ -1,53 +1,59 @@
-pipeline {
-    agent any // Runs on your local Mac Jenkins agent
 
-    environment {
-        // --- UPDATE THESE VARIABLES ---
-        AWS_REGION = 'us-east-1' // 1. Change to your region
-        AWS_ACCOUNT_ID = '424227905540' // 2. Replace with your 12-digit AWS Account ID
-        ECR_REPO_NAME = 'bookstoreimage'
-        // ------------------------------
+ pipeline {
+     agent any
 
-        IMAGE_TAG      = "${env.BUILD_NUMBER}"
-        ECR_REGISTRY   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-    }
+     environment {
+             // --- UPDATE THESE VARIABLES ---
+               AWS_REGION = 'us-east-1' // 1. Change to your region
+               AWS_ACCOUNT_ID = '424227905540' // 2. Replace with your 12-digit AWS Account ID
+               ECR_REPO_NAME = 'bookstoreimage'
+         // ------------------------------
 
-    stages {
-        stage('Build Spring Boot JAR') {
-            steps {
-                // Ensure your Mac Jenkins has access to maven or the maven wrapper
-                sh './mvnw clean package -DskipTests'
-            }
-        }
+         ECR_REGISTRY   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+         IMAGE_TAG      = "latest"
+     }
 
-        stage('Build Docker Image') {
-            steps {
-                // Build the image using the Dockerfile
-                sh "docker build -t ${ECR_REPO_NAME}:${IMAGE_TAG} ."
+     stages {
+         stage('Checkout Code') {
+             steps {
+                 // Agar GitHub use kar rahe ho toh yahan git checkout aayega
+                 checkout scm
+             }
+         }
 
-                // Tag the image for your AWS ECR registry
-                sh "docker tag ${ECR_REPO_NAME}:${IMAGE_TAG} ${ECR_REGISTRY}/${ECR_REPO_NAME}:${IMAGE_TAG}"
-                sh "docker tag ${ECR_REPO_NAME}:${IMAGE_TAG} ${ECR_REGISTRY}/${ECR_REPO_NAME}:latest"
-            }
-        }
+         stage('Build Jar') {
+             steps {
+                 // Spring Boot ka JAR banana
+                 sh './mvnw clean package -DskipTests'
+             }
+         }
 
-        stage('Push to AWS ECR') {
-            steps {
-                // This injects the AWS credentials you saved in Jenkins
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws-ecr-credentials',
-                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-                ]]) {
-                    // Authenticate Docker with AWS ECR, then push the images
-                    sh """
-                        aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
-                        docker push ${ECR_REGISTRY}/${ECR_REPO_NAME}:${IMAGE_TAG}
-                        docker push ${ECR_REGISTRY}/${ECR_REPO_NAME}:latest
-                    """
-                }
-            }
-        }
-    }
-}
+         stage('Build Docker Image') {
+             steps {
+                 // Docker image build karna
+                 sh "docker build -t ${ECR_REPO_NAME} ."
+                 // Image ko ECR ke format mein tag karna
+                 sh "docker tag ${ECR_REPO_NAME}:latest ${ECR_REGISTRY}/${ECR_REPO_NAME}:${IMAGE_TAG}"
+             }
+         }
+
+         stage('Push to ECR') {
+             steps {
+                 // Jenkins mein jo ID banayi thi 'aws-ecr-creds' wo use karenge
+                 withCredentials([[
+                     $class: 'AmazonWebServicesCredentialsBinding',
+                     credentialsId: 'aws-ecr-creds',
+                     accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                     secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                 ]]) {
+                     sh """
+                         # ECR mein login karna
+                         aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+                         # Image push karna
+                         docker push ${ECR_REGISTRY}/${ECR_REPO_NAME}:${IMAGE_TAG}
+                     """
+                 }
+             }
+         }
+     }
+ }
