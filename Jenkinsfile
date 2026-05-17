@@ -31,7 +31,9 @@
          stage('Build Docker Image') {
              steps {
                  // Docker image build karna
-                 sh "docker build -t ${ECR_REPO_NAME} ."
+//                  sh "docker build -t ${ECR_REPO_NAME} ."
+//                  This is to build image for linux not for silicons mac
+                 sudo "docker build --platform linux/amd64 -t ${ECR_REPO_NAME}:${IMAGE_TAG} ."
                  // Image ko ECR ke format mein tag karna
                  sh "docker tag ${ECR_REPO_NAME}:latest ${ECR_REGISTRY}/${ECR_REPO_NAME}:${IMAGE_TAG}"
              }
