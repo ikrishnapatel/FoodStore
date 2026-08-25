@@ -1,4 +1,6 @@
-package org.example.bookstore.BookDao;
+package org.example.bookstore.Repository;
+
+import org.example.bookstore.BookDao.Book;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
