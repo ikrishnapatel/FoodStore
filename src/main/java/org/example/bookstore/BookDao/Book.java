@@ -25,7 +25,22 @@ public class Book {
 
     private Double price;
 
+    private String imageUrl;
+
     // "mappedBy" tells JPA that the Author class owns the relationship mapping
     @ManyToMany(mappedBy = "books")
     private Set<Author> authors;
+
+    public Book(int id, String name, Double price) {
+        this.id = id;
+        this.name = name;
+        this.price = price;
+    }
+
+    public Book(int id, String name, Double price, String imageUrl) {
+        this.id = id;
+        this.name = name;
+        this.price = price;
+        this.imageUrl = imageUrl;
+    }
 }

@@ -12,6 +12,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/books")
+@CrossOrigin(origins = "*")
 public class BookController {
 
     private final BookService bookService;
@@ -19,6 +20,13 @@ public class BookController {
     // Constructor Injection is best practice
     public BookController(BookService bookService) {
         this.bookService = bookService;
+    }
+
+    // 0. Health check
+    // GET: http://localhost:8080/api/books/health
+    @GetMapping("/health")
+    public ResponseEntity<String> healthCheck() {
+        return ResponseEntity.ok("Bookstore API is up and running!");
     }
 
     // 1. Get all books

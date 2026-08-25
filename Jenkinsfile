@@ -8,6 +8,8 @@
                AWS_ACCOUNT_ID = '424227905540' // 2. Replace with your 12-digit AWS Account ID
                ECR_REPO_NAME = 'bookstoreimage'
          // ------------------------------
+         ECS_CLUSTER    = 'your-ecs-cluster-name' // 3. Replace with your ECS cluster name
+         ECS_SERVICE    = 'your-ecs-service-name' // 4. Replace with your ECS service name
 
          ECR_REGISTRY   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
          IMAGE_TAG      = "latest"
@@ -53,6 +55,22 @@
                          aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
                          # Image push karna
                          docker push ${ECR_REGISTRY}/${ECR_REPO_NAME}:${IMAGE_TAG}
+                     """
+                 }
+             }
+         }
+         stage('Deploy to ECS') {
+             steps {
+                 // Update the ECS service to force a new deployment
+                 withCredentials([[
+                     $class: 'AmazonWebServicesCredentialsBinding',
+                     credentialsId: 'aws-ecr-creds',
+                     accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                     secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                 ]]) {
+                     sh """
+                         # Trigger new deployment in ECS
+                         aws ecs update-service --cluster ${ECS_CLUSTER} --service ${ECS_SERVICE} --force-new-deployment --region ${AWS_REGION}
                      """
                  }
              }

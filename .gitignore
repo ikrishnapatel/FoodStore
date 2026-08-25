@@ -33,3 +33,6 @@ build/
 .vscode/
 
 Notes/
+jenkin.md
+aws_cred.md
+postgres_setup.md
