@@ -11,12 +11,8 @@ pipeline {
           // --- ECS Infrastructure Config ---
           ECS_CLUSTER    = 'bookstore-cluster'
           ECS_SERVICE    = 'bookstore-service'
-          
-          // --- CloudFormation Parameters (Update these with your values) ---
-          VPC_ID         = 'vpc-xxxxxx'           // <-- Update this with your VPC ID
-          SUBNET_IDS     = 'subnet-xxx,subnet-yyy' // <-- Update this with your Subnet IDs (comma-separated)
-          DB_SECRET_ARN  = 'arn:aws:secretsmanager:us-east-1:272694330898:secret:your-db-secret' // <-- Update this with your Secrets Manager Secret ARN
-          DB_URL         = 'jdbc:postgresql://bookstore-db-server.cluster-ci7omoswsvgf.us-east-1.rds.amazonaws.com:5432/bookstoredb'
+          VPC_ID         = 'vpc-0bcaf6058320e4455'         
+          SUBNET_IDS     = 'subnet-0d651793d163cdcbd' 
      }
  
      stages {
@@ -58,12 +54,11 @@ pipeline {
 
           stage('Provision Infrastructure') {
               steps {
-                  withCredentials([[
-                      $class: 'AmazonWebServicesCredentialsBinding',
-                      credentialsId: 'awscreds',
-                      accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                      secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-                  ]]) {
+                  withCredentials([
+                      [$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'awscreds', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'],
+                      string(credentialsId: 'datasourcestring', variable: 'DB_URL'),
+                      string(credentialsId: 'secretmanageridpass', variable: 'DB_SECRET_ARN')
+                  ]) {
                       sh """
                           aws cloudformation deploy \
                             --template-file ecs-template.yml \

@@ -31,14 +31,12 @@ Resources:
     Properties:
       ClusterName: bookstore-cluster
 
-  # 2. CloudWatch Log Group for ECS Task logs
   LogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: /ecs/bookstore-api
       RetentionInDays: 7
 
-  # 3. IAM execution role (used by ECS agent to pull image and read Secrets)
   EcsExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -62,7 +60,6 @@ Resources:
                   - secretsmanager:GetSecretValue
                 Resource: !Ref DbSecretArn
 
-  # 4. ECS Task Role (used by the running Java application itself, if needed)
   EcsTaskRole:
     Type: AWS::IAM::Role
     Properties:
@@ -75,7 +72,6 @@ Resources:
             Action: sts:AssumeRole
       Path: /
 
-  # 5. ECS Security Group
   EcsSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -87,13 +83,12 @@ Resources:
           ToPort: 8081
           CidrIp: 0.0.0.0/0
 
-  # 6. ECS Task Definition
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Family: bookstore-task
-      Cpu: '512'       # 0.5 vCPU
-      Memory: '1024'   # 1 GB RAM
+      Cpu: '512'       
+      Memory: '1024'  
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
@@ -122,9 +117,8 @@ Resources:
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: ecs
 
-  # 7. ECS Fargate Service
   EcsService:
-    Type: AWS::ECS::Service
+    Type: AWS::ECS::Service 
     Properties:
       ServiceName: bookstore-service
       Cluster: !Ref EcsCluster
