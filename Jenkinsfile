@@ -59,19 +59,19 @@ pipeline {
                       string(credentialsId: 'datasourcestring', variable: 'DB_URL'),
                       string(credentialsId: 'secretmanageridpass', variable: 'DB_SECRET_ARN')
                   ]) {
-                      sh """
+                      sh '''
                           aws cloudformation deploy \
                             --template-file ecs-template.yml \
                             --stack-name bookstore-ecs-stack \
                             --parameter-overrides \
-                              VpcId=${VPC_ID} \
-                              SubnetIds=${SUBNET_IDS} \
-                              DbSecretArn=${DB_SECRET_ARN} \
-                              EcrImageUri=${ECR_REGISTRY}/${ECR_REPO_NAME}:${IMAGE_TAG} \
-                              DbUrl=${DB_URL} \
+                              VpcId=$VPC_ID \
+                              SubnetIds=$SUBNET_IDS \
+                              DbSecretArn=$DB_SECRET_ARN \
+                              EcrImageUri=$ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG \
+                              DbUrl=$DB_URL \
                             --capabilities CAPABILITY_IAM \
-                            --region ${AWS_REGION}
-                      """
+                            --region $AWS_REGION
+                      '''
                   }
               }
           }
@@ -88,6 +88,18 @@ pipeline {
                           aws ecs update-service --cluster ${ECS_CLUSTER} --service ${ECS_SERVICE} --force-new-deployment --region ${AWS_REGION}
                       """
                   }
+              }
+          }
+     }
+     post {
+          failure {
+              withCredentials([[
+                  $class: 'AmazonWebServicesCredentialsBinding',
+                  credentialsId: 'awscreds',
+                  accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                  secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+              ]]) {
+                  sh 'aws cloudformation describe-stack-events --stack-name bookstore-ecs-stack --region us-east-1 --query "StackEvents[?ResourceStatus==\'CREATE_FAILED\' || ResourceStatus==\'UPDATE_FAILED\'].{Resource:LogicalResourceId,Status:ResourceStatus,Reason:ResourceStatusReason}" --output table || true'
               }
           }
      }
