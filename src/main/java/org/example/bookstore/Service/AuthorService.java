@@ -16,22 +16,21 @@ public class AuthorService {
         this.authorRepository = authorRepository;
     }
 
-    // GET ALL
     public List<Author> getAllAuthors() {
         return authorRepository.findAll();
     }
 
-    // GET BY ID
+
     public Optional<Author> getAuthorById(int id) {
         return authorRepository.findById(id);
     }
 
-    // CREATE
+
     public Author addAuthor(Author author) {
         return authorRepository.save(author);
     }
 
-    // UPDATE
+
     public Author updateAuthor(int id, Author updatedAuthor) {
         return authorRepository.findById(id).map(existingAuthor -> {
             existingAuthor.setName(updatedAuthor.getName());
@@ -39,7 +38,6 @@ public class AuthorService {
         }).orElse(null);
     }
 
-    // DELETE
     public boolean deleteAuthor(int id) {
         if (authorRepository.existsById(id)) {
             authorRepository.deleteById(id);
