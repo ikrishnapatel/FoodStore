@@ -25,7 +25,6 @@ public class Author {
     @NotBlank(message = "Author name is mandatory")
     private String name;
 
-    // One author can have many books
     @JsonIgnore
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Book> books;

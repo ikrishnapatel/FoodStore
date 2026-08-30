@@ -25,7 +25,6 @@ public class BookCreationRequest {
     @NotNull(message = "Author ID is mandatory")
     private Integer authorId;
 
-    // Getters and Setters
     public String getName() {
         return name;
     }

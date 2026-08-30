@@ -22,18 +22,16 @@ public class BookService {
         this.authorRepository = authorRepository;
     }
 
-    // GET ALL
     public List<Book> getAllBooks() {
         return bookRepository.findAll();
     }
 
-    // GET BY ID
     public Book getBookById(int id) {
         return bookRepository.findById(id)
                 .orElseThrow(() -> new BookNotFoundException("Book not found with id: " + id));
     }
 
-    // CREATE
+
     @Transactional
     public Book addBook(BookCreationRequest request) {
         Book newBook = new Book();
@@ -48,7 +46,6 @@ public class BookService {
         return bookRepository.save(newBook);
     }
 
-    // UPDATE
     @Transactional
     public Book updateBook(int id, BookCreationRequest request) {
         Book existingBook = bookRepository.findById(id)
@@ -65,7 +62,7 @@ public class BookService {
         return bookRepository.save(existingBook);
     }
 
-    // DELETE
+
     public boolean deleteBook(int id) {
         if (!bookRepository.existsById(id)) {
             throw new BookNotFoundException("Book not found with id: " + id);
@@ -73,7 +70,8 @@ public class BookService {
         bookRepository.deleteById(id);
         return true;
     }
-    // DELETE MULTIPLE
+
+    
     @Transactional
     public BulkDeleteResponse deleteBooks(List<Integer> ids) {
         if (ids == null || ids.isEmpty()) {

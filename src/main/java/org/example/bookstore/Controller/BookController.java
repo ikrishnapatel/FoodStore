@@ -20,12 +20,10 @@ public class BookController {
 
     private final BookService bookService;
 
-    // Constructor Injection is best practice
     public BookController(BookService bookService) {
         this.bookService = bookService;
     }
 
-    // 0. Health check
     // GET: http://localhost:8080/api/books/health
     @GetMapping("/health")
     public ResponseEntity<ApiResponse<String>> healthCheck() {
