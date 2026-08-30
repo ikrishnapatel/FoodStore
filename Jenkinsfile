@@ -6,7 +6,7 @@ pipeline {
              // --- UPDATE THESE VARIABLES ---
                AWS_REGION = 'us-east-1' // 1. Change to your region
                AWS_ACCOUNT_ID = '272694330898' // 2. Replace with your 12-digit AWS Account ID
-               ECR_REPO_NAME = 'app-3107dev/bookstore'
+               ECR_REPO_NAME = 'bookstore'
         //  // ------------------------------
         //  ECS_CLUSTER    = 'your-ecs-cluster-name' // 3. Replace with your ECS cluster name
         //  ECS_SERVICE    = 'your-ecs-service-name' // 4. Replace with your ECS service name
