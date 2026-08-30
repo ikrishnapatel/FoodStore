@@ -5,11 +5,11 @@
      environment {
              // --- UPDATE THESE VARIABLES ---
                AWS_REGION = 'us-east-1' // 1. Change to your region
-               AWS_ACCOUNT_ID = '424227905540' // 2. Replace with your 12-digit AWS Account ID
-               ECR_REPO_NAME = 'bookstoreimage'
-         // ------------------------------
-         ECS_CLUSTER    = 'your-ecs-cluster-name' // 3. Replace with your ECS cluster name
-         ECS_SERVICE    = 'your-ecs-service-name' // 4. Replace with your ECS service name
+               AWS_ACCOUNT_ID = '272694330898' // 2. Replace with your 12-digit AWS Account ID
+               ECR_REPO_NAME = 'app-3107dev/bookstore'
+        //  // ------------------------------
+        //  ECS_CLUSTER    = 'your-ecs-cluster-name' // 3. Replace with your ECS cluster name
+        //  ECS_SERVICE    = 'your-ecs-service-name' // 4. Replace with your ECS service name
 
          ECR_REGISTRY   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
          IMAGE_TAG      = "latest"
@@ -43,10 +43,9 @@
 
          stage('Push to ECR') {
              steps {
-                 // Jenkins mein jo ID banayi thi 'aws-ecr-creds' wo use karenge
                  withCredentials([[
                      $class: 'AmazonWebServicesCredentialsBinding',
-                     credentialsId: 'aws-ecr-creds',
+                     credentialsId: 'awscreds',
                      accessKeyVariable: 'AWS_ACCESS_KEY_ID',
                      secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                  ]]) {
@@ -59,21 +58,20 @@
                  }
              }
          }
-         stage('Deploy to ECS') {
-             steps {
-                 // Update the ECS service to force a new deployment
-                 withCredentials([[
-                     $class: 'AmazonWebServicesCredentialsBinding',
-                     credentialsId: 'aws-ecr-creds',
-                     accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                     secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-                 ]]) {
-                     sh """
-                         # Trigger new deployment in ECS
-                         aws ecs update-service --cluster ${ECS_CLUSTER} --service ${ECS_SERVICE} --force-new-deployment --region ${AWS_REGION}
-                     """
-                 }
-             }
-         }
+        //  stage('Deploy to ECS') {
+        //      steps {
+        //          withCredentials([[
+        //              $class: 'AmazonWebServicesCredentialsBinding',
+        //              credentialsId: 'awscreds',
+        //              accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+        //              secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+        //          ]]) {
+        //              sh """
+        //                  # Trigger new deployment in ECS
+        //                  aws ecs update-service --cluster ${ECS_CLUSTER} --service ${ECS_SERVICE} --force-new-deployment --region ${AWS_REGION}
+        //              """
+        //          }
+        //      }
+        //  }
      }
  }
