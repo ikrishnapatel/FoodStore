@@ -2,11 +2,13 @@ pipeline {
      agent any
  
      environment {
-          AWS_REGION = 'us-east-1' 
+          AWS_REGION     = 'us-east-1' 
           AWS_ACCOUNT_ID = '272694330898'  
-          ECR_REPO_NAME = 'bookstore'
+          ECR_REPO_NAME  = 'bookstore'
           ECR_REGISTRY   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
           IMAGE_TAG      = "latest"
+          ECS_CLUSTER    = 'bookstore-cluster'
+          ECS_SERVICE    = 'bookstore-service'
      }
  
      stages {
@@ -42,6 +44,21 @@ pipeline {
                               docker buildx rm ecr-builder || true
                           """
                       }
+                  }
+              }
+          }
+
+          stage('Deploy to ECS') {
+              steps {
+                  withCredentials([[
+                      $class: 'AmazonWebServicesCredentialsBinding',
+                      credentialsId: 'awscreds',
+                      accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                      secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                  ]]) {
+                      sh """
+                          aws ecs update-service --cluster ${ECS_CLUSTER} --service ${ECS_SERVICE} --force-new-deployment --region ${AWS_REGION}
+                      """
                   }
               }
           }
