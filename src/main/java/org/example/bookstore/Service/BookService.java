@@ -2,7 +2,6 @@ package org.example.bookstore.Service;
 
 import org.example.bookstore.BookDao.Book;
 import org.example.bookstore.Repository.BookRepository;
-import org.example.bookstore.BookDao.Author;
 import org.example.bookstore.BookDao.BookCreationRequest;
 import org.example.bookstore.Repository.AuthorRepository;
 import org.example.bookstore.BookDao.BulkDeleteResponse;
