@@ -7,6 +7,7 @@ import org.example.bookstore.Repository.AuthorRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Component
@@ -35,34 +36,34 @@ public class DataLoader implements CommandLineRunner {
         if (bookRepository.count() == 0) {
             List<Author> authors = authorRepository.findAll();
             
-            Book b1 = new Book(0, "Spring Boot in Action", 450.00, "https://m.media-amazon.com/images/I/41-qf8Z11cL._SY445_SX342_.jpg");
+            Book b1 = new Book(0, "Spring Boot in Action", BigDecimal.valueOf(450.00), "https://m.media-amazon.com/images/I/41-qf8Z11cL._SY445_SX342_.jpg");
             b1.setAuthor(authors.get(0));
 
-            Book b2 = new Book(0, "Effective Java", 550.50, "https://m.media-amazon.com/images/I/41T-jN9t2oL._SY445_SX342_.jpg");
+            Book b2 = new Book(0, "Effective Java", BigDecimal.valueOf(550.50), "https://m.media-amazon.com/images/I/41T-jN9t2oL._SY445_SX342_.jpg");
             b2.setAuthor(authors.get(1));
 
-            Book b3 = new Book(0, "Clean Code", 400.00, "https://m.media-amazon.com/images/I/41xShlnTZTL._SX376_BO1,204,203,200_.jpg");
+            Book b3 = new Book(0, "Clean Code", BigDecimal.valueOf(400.00), "https://m.media-amazon.com/images/I/41xShlnTZTL._SX376_BO1,204,203,200_.jpg");
             b3.setAuthor(authors.get(2));
 
-            Book b4 = new Book(0, "The Clean Coder", 350.00, "https://m.media-amazon.com/images/I/41T-jN9t2oL._SY445_SX342_.jpg"); // Placeholder image
+            Book b4 = new Book(0, "The Clean Coder", BigDecimal.valueOf(350.00), "https://m.media-amazon.com/images/I/41T-jN9t2oL._SY445_SX342_.jpg"); // Placeholder image
             b4.setAuthor(authors.get(2));
 
-            Book b5 = new Book(0, "The Fellowship of the Ring", 600.00, "https://m.media-amazon.com/images/I/41bQ1sX+n5L._SY445_SX342_.jpg");
+            Book b5 = new Book(0, "The Fellowship of the Ring", BigDecimal.valueOf(600.00), "https://m.media-amazon.com/images/I/41bQ1sX+n5L._SY445_SX342_.jpg");
             b5.setAuthor(authors.get(3));
 
-            Book b6 = new Book(0, "The Two Towers", 600.00, "https://m.media-amazon.com/images/I/41bQ1sX+n5L._SY445_SX342_.jpg"); // Placeholder
+            Book b6 = new Book(0, "The Two Towers", BigDecimal.valueOf(600.00), "https://m.media-amazon.com/images/I/41bQ1sX+n5L._SY445_SX342_.jpg"); // Placeholder
             b6.setAuthor(authors.get(3));
 
-            Book b7 = new Book(0, "The Return of the King", 600.00, "https://m.media-amazon.com/images/I/41bQ1sX+n5L._SY445_SX342_.jpg"); // Placeholder
+            Book b7 = new Book(0, "The Return of the King", BigDecimal.valueOf(600.00), "https://m.media-amazon.com/images/I/41bQ1sX+n5L._SY445_SX342_.jpg"); // Placeholder
             b7.setAuthor(authors.get(3));
 
-            Book b8 = new Book(0, "A Game of Thrones", 750.00, "https://m.media-amazon.com/images/I/41-qf8Z11cL._SY445_SX342_.jpg"); // Placeholder
+            Book b8 = new Book(0, "A Game of Thrones", BigDecimal.valueOf(750.00), "https://m.media-amazon.com/images/I/41-qf8Z11cL._SY445_SX342_.jpg"); // Placeholder
             b8.setAuthor(authors.get(4));
 
-            Book b9 = new Book(0, "A Clash of Kings", 750.00, "https://m.media-amazon.com/images/I/41-qf8Z11cL._SY445_SX342_.jpg"); // Placeholder
+            Book b9 = new Book(0, "A Clash of Kings", BigDecimal.valueOf(750.00), "https://m.media-amazon.com/images/I/41-qf8Z11cL._SY445_SX342_.jpg"); // Placeholder
             b9.setAuthor(authors.get(4));
 
-            Book b10 = new Book(0, "A Storm of Swords", 800.00, "https://m.media-amazon.com/images/I/41-qf8Z11cL._SY445_SX342_.jpg"); // Placeholder
+            Book b10 = new Book(0, "A Storm of Swords", BigDecimal.valueOf(800.00), "https://m.media-amazon.com/images/I/41-qf8Z11cL._SY445_SX342_.jpg"); // Placeholder
             b10.setAuthor(authors.get(4));
 
             bookRepository.saveAll(List.of(b1, b2, b3, b4, b5, b6, b7, b8, b9, b10));
