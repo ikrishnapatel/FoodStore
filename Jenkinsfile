@@ -4,7 +4,7 @@ pipeline {
      environment {
           AWS_REGION = 'us-east-1' 
           AWS_ACCOUNT_ID = '272694330898'  
-          ECR_REPO_NAME = 'app-3107dev/bookstore'
+          ECR_REPO_NAME = 'bookstore'
           ECR_REGISTRY   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
           IMAGE_TAG      = "latest"
      }
