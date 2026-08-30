@@ -1,0 +1,151 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template to deploy Bookstore API on AWS ECS Fargate with Secrets Manager'
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: Select the VPC where the ECS service should run.
+  
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Select at least two subnets (preferably public or private with NAT) for the ECS tasks.
+
+  EcrImageUri:
+    Type: String
+    Default: '272694330898.dkr.ecr.us-east-1.amazonaws.com/app-3107dev/bookstore:latest'
+    Description: The URI of the ECR image.
+
+  DbUrl:
+    Type: String
+    Default: 'jdbc:postgresql://bookstore-db-server.cluster-ci7omoswsvgf.us-east-1.rds.amazonaws.com:5432/bookstoredb'
+    Description: The JDBC connection string to the PostgreSQL database.
+
+Resources:
+  # 1. ECS Cluster
+  EcsCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: bookstore-cluster
+
+  # 2. Database Credentials Secret in Secrets Manager (Stores username & password securely)
+  DbSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: bookstore/db-credentials
+      Description: Database credentials for Bookstore API
+      SecretString: '{"username":"postgres","password":"somepostgrespa"}'
+
+  # 3. CloudWatch Log Group for ECS Task logs
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/bookstore-api
+      RetentionInDays: 7
+
+  # 4. IAM execution role (used by ECS agent to pull image and read Secrets)
+  EcsExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2010-09-09'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: EcsGetSecretsPolicy
+          PolicyDocument:
+            Version: '2010-09-09'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Ref DbSecret
+
+  # 5. ECS Task Role (used by the running Java application itself, if needed)
+  EcsTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2010-09-09'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+
+  # 6. ECS Security Group
+  EcsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Access control for Bookstore ECS tasks
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8081
+          ToPort: 8081
+          CidrIp: 0.0.0.0/0 # Adjust this if you only want load balancer traffic
+
+  # 7. ECS Task Definition
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: bookstore-task
+      Cpu: '512'       # 0.5 vCPU
+      Memory: '1024'   # 1 GB RAM
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ExecutionRoleArn: !Ref EcsExecutionRole
+      TaskRoleArn: !Ref EcsTaskRole
+      ContainerDefinitions:
+        - Name: bookstore-app
+          Image: !Ref EcrImageUri
+          Cpu: 512
+          Memory: 1024
+          PortMappings:
+            - ContainerPort: 8081
+              Protocol: tcp
+          Environment:
+            - Name: DB_URL
+              Value: !Ref DbUrl
+          Secrets:
+            - Name: DB_USERNAME
+              ValueFrom: !Sub '${DbSecret}:username::'
+            - Name: DB_PASSWORD
+              ValueFrom: !Sub '${DbSecret}:password::'
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroup
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: ecs
+
+  # 8. ECS Fargate Service
+  EcsService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: bookstore-service
+      Cluster: !Ref EcsCluster
+      TaskDefinition: !Ref TaskDefinition
+      LaunchType: FARGATE
+      DesiredCount: 1
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !Ref EcsSecurityGroup
+          Subnets: !Ref SubnetIds
+
+Outputs:
+  ClusterName:
+    Value: !Ref EcsCluster
+  ServiceName:
+    Value: !Ref EcsService
+  SecretArn:
+    Value: !Ref DbSecret
