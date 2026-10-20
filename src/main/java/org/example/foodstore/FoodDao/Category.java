@@ -8,7 +8,7 @@ import lombok.ToString;
 import jakarta.persistence.*;
 import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.NotBlank;
 
 @Entity
@@ -17,16 +17,14 @@ import jakarta.validation.constraints.NotBlank;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString(exclude = "foods")
-@Schema(description = "Category details")
+// @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Category {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Schema(description = "Unique identifier of the category", example = "1")
     private int id;
 
     @NotBlank(message = "Category name is mandatory")
-    @Schema(description = "Name of the category", example = "Italian", requiredMode = Schema.RequiredMode.REQUIRED)
     private String name;
 
     @JsonIgnore
