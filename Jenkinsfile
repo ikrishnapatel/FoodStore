@@ -4,13 +4,13 @@ pipeline {
      environment {
           AWS_REGION     = 'us-east-1' 
           AWS_ACCOUNT_ID = '272694330898'  
-          ECR_REPO_NAME  = 'bookstore'
+          ECR_REPO_NAME  = 'foodstore'
           ECR_REGISTRY   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
           IMAGE_TAG      = "latest"
           
           // --- ECS Infrastructure Config ---
-          ECS_CLUSTER    = 'bookstore-cluster'
-          ECS_SERVICE    = 'bookstore-service'
+          ECS_CLUSTER    = 'foodstore-cluster'
+          ECS_SERVICE    = 'foodstore-service'
           VPC_ID         = 'vpc-0bcaf6058320e4455'         
           SUBNET_IDS     = 'subnet-0d651793d163cdcbd' 
      }
@@ -62,7 +62,7 @@ pipeline {
                       sh '''
                           aws cloudformation deploy \
                             --template-file ecs-template.yml \
-                            --stack-name bookstore-ecs-stack \
+                            --stack-name foodstore-ecs-stack \
                             --parameter-overrides \
                               VpcId=$VPC_ID \
                               SubnetIds=$SUBNET_IDS \
@@ -99,7 +99,7 @@ pipeline {
                   accessKeyVariable: 'AWS_ACCESS_KEY_ID',
                   secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
               ]]) {
-                  sh 'aws cloudformation describe-stack-events --stack-name bookstore-ecs-stack --region us-east-1 --query "StackEvents[?ResourceStatus==\'CREATE_FAILED\' || ResourceStatus==\'UPDATE_FAILED\'].{Resource:LogicalResourceId,Status:ResourceStatus,Reason:ResourceStatusReason}" --output table || true'
+                  sh 'aws cloudformation describe-stack-events --stack-name foodstore-ecs-stack --region us-east-1 --query "StackEvents[?ResourceStatus==\'CREATE_FAILED\' || ResourceStatus==\'UPDATE_FAILED\'].{Resource:LogicalResourceId,Status:ResourceStatus,Reason:ResourceStatusReason}" --output table || true'
               }
           }
      }

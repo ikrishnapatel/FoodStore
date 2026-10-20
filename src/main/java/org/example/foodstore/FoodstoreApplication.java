@@ -1,13 +1,13 @@
-package org.example.bookstore;
+package org.example.foodstore;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class BookstoreApplication {
+public class FoodstoreApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(BookstoreApplication.class, args);
+        SpringApplication.run(FoodstoreApplication.class, args);
     }
 
 }

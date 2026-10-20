@@ -1,4 +1,4 @@
-package org.example.bookstore.Exception;
+package org.example.foodstore.Exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -12,8 +12,8 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(BookNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleBookNotFoundException(BookNotFoundException ex, HttpServletRequest request) {
+    @ExceptionHandler(FoodNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleFoodNotFoundException(FoodNotFoundException ex, HttpServletRequest request) {
         ErrorResponse errorResponse = new ErrorResponse(
                 false,
                 HttpStatus.NOT_FOUND.value(),

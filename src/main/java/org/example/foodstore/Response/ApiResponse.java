@@ -1,4 +1,5 @@
-package org.example.bookstore.Response;
+package org.example.foodstore.Response;
+
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -10,6 +11,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ApiResponse<T> {
+
     private boolean success;
     private int statusCode;
     private String message;

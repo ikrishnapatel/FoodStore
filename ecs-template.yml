@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'CloudFormation template to deploy Bookstore API on AWS ECS Fargate referencing an existing Secrets Manager Secret'
+Description: 'CloudFormation template to deploy Foodstore API on AWS ECS Fargate referencing an existing Secrets Manager Secret'
 
 Parameters:
   VpcId:
@@ -12,12 +12,12 @@ Parameters:
 
   EcrImageUri:
     Type: String
-    Default: '272694330898.dkr.ecr.us-east-1.amazonaws.com/app-3107dev/bookstore:latest'
+    Default: '272694330898.dkr.ecr.us-east-1.amazonaws.com/app-3107dev/foodstore:latest'
     Description: The URI of the ECR image.
 
   DbUrl:
     Type: String
-    Default: 'jdbc:postgresql://bookstore-db-server.cluster-ci7omoswsvgf.us-east-1.rds.amazonaws.com:5432/bookstoredb'
+    Default: 'jdbc:postgresql://foodstore-db-server.cluster-ci7omoswsvgf.us-east-1.rds.amazonaws.com:5432/foodstoredb'
     Description: The JDBC connection string to the PostgreSQL database.
 
   DbSecretArn:
@@ -29,12 +29,12 @@ Resources:
   EcsCluster:
     Type: AWS::ECS::Cluster
     Properties:
-      ClusterName: bookstore-cluster
+      ClusterName: foodstore-cluster
 
   LogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: /ecs/bookstore-api
+      LogGroupName: /ecs/foodstore-api
       RetentionInDays: 7
 
   EcsExecutionRole:
@@ -75,7 +75,7 @@ Resources:
   EcsSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Access control for Bookstore ECS tasks
+      GroupDescription: Access control for Foodstore ECS tasks
       VpcId: !Ref VpcId
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -86,7 +86,7 @@ Resources:
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      Family: bookstore-task
+      Family: foodstore-task
       Cpu: '512'       
       Memory: '1024'  
       NetworkMode: awsvpc
@@ -95,7 +95,7 @@ Resources:
       ExecutionRoleArn: !Ref EcsExecutionRole
       TaskRoleArn: !Ref EcsTaskRole
       ContainerDefinitions:
-        - Name: bookstore-app
+        - Name: foodstore-app
           Image: !Ref EcrImageUri
           Cpu: 512
           Memory: 1024
@@ -120,7 +120,7 @@ Resources:
   EcsService:
     Type: AWS::ECS::Service 
     Properties:
-      ServiceName: bookstore-service
+      ServiceName: foodstore-service
       Cluster: !Ref EcsCluster
       TaskDefinition: !Ref TaskDefinition
       LaunchType: FARGATE
