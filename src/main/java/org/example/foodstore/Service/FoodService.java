@@ -23,6 +23,15 @@ public class FoodService {
     }
 
     @Transactional
+    public Food addFood(Food food) {
+        Integer catId = food.getCategoryId();
+        if (catId != null) {
+            food.setCategory(categoryRepository.getReferenceById(catId));
+        }
+        return foodRepository.save(food);
+    }
+
+    @Transactional
     public List<Food> addFoods(List<Food> foods) {
         for (Food food : foods) {
             Integer catId = food.getCategoryId();

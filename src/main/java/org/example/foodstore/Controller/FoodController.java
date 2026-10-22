@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -36,9 +37,18 @@ public class FoodController {
         return ResponseEntity.ok(ApiResponse.success("Foods retrieved successfully", foodService.getAllFoods()));
     }
 
-    // 2. Add multiple foods from list
-    // POST: http://localhost:8080/api/foods or POST: http://localhost:8080/api/foods/bulk
-    @PostMapping({"", "/bulk"})
+    // 2. Add single food
+    // POST: http://localhost:8081/api/foods
+    @PostMapping
+    public ResponseEntity<ApiResponse<Food>> addFood(@Valid @RequestBody Food food) {
+        Food savedFood = foodService.addFood(food);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(HttpStatus.CREATED.value(), "Food added successfully", savedFood));
+    }
+
+    // 3. Add multiple foods from list
+    // POST: http://localhost:8081/api/foods/bulk
+    @PostMapping("/bulk")
     public ResponseEntity<ApiResponse<List<Food>>> addFoods(@RequestBody List<Food> foods) {
         List<Food> savedFoods = foodService.addFoods(foods);
         return ResponseEntity.status(HttpStatus.CREATED)
