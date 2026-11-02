@@ -176,4 +176,141 @@ You do not have to use Postman's "Basic Auth" tab. You can directly send the Bas
 
 Both `GET /api/foods` (200 OK) and `POST /api/foods` (201 Created) will work directly.
 
+---
+
+## 9. Database Authentication & BCrypt Password Validation Flow
+
+When authenticating against a database with custom `UserDetailsService` and `BCryptPasswordEncoder`, the full internal lifecycle is:
+
+```text
+HTTP Request (Authorization: Basic base64(username:password))
+      │
+      ▼
+1. BasicAuthenticationFilter
+   • Extracts header & decodes Base64 to raw username & raw password.
+   • Wraps into: UsernamePasswordAuthenticationToken(username, rawPassword).
+      │
+      ▼
+2. AuthenticationManager (ProviderManager)
+   • Forwards token to configured provider: DaoAuthenticationProvider.
+      │
+      ▼
+3. DaoAuthenticationProvider calls CustomUserDetailsService
+   • Invokes: loadUserByUsername(username)
+   • Queries PostgreSQL: userRepository.findByName(username)
+   • Returns UserDetails containing:
+       - Username: user.getName()
+       - DB Hashed Password: user.getPassword() (e.g., "$2a$10$...")
+       - Roles / Authorities: e.g., "ROLE_ADMIN"
+      │
+      ▼
+4. Password Validation (BCrypt Hashing, NOT Decryption)
+   • Invokes: passwordEncoder.matches(rawPassword, userDetails.getPassword())
+   • Why no decryption? BCrypt is a one-way cryptographic hash.
+     Spring extracts the salt from the stored DB hash, hashes the incoming
+     raw password with that salt, and verifies if the two hashes match.
+      │
+      ▼
+5. SecurityContext & Authorization
+   • On Match: Creates an authenticated UsernamePasswordAuthenticationToken.
+   • Stored in SecurityContextHolder.
+   • AuthorizationFilter checks URL permissions:
+       - e.g., POST /api/users requires hasRole("ADMIN")
+       - If user has ROLE_ADMIN: 201 Created / 200 OK
+       - If user lacks role: 403 Forbidden
+       - If credentials invalid: 401 Unauthorized
+```
+
+### Key Components Summary:
+
+| Component | Class in Code | Responsibility |
+| :--- | :--- | :--- |
+| **Credentials Filter** | `BasicAuthenticationFilter` | Parses Base64 HTTP Basic header into credentials |
+| **Auth Provider** | `DaoAuthenticationProvider` | Coordinates user lookup and password matching |
+| **User Retrieval** | `CustomUserDetailsService` | Loads user from DB into Spring Security's `UserDetails` |
+| **Password Matcher** | `BCryptPasswordEncoder` | Hashes incoming raw password and checks against DB hash |
+| **Role Enforcement** | `AuthorizationFilter` | Verifies `hasRole("ADMIN")` or `.authenticated()` rules |
+
+---
+
+## 10. JWT (JSON Web Token) Authentication Flow & Usage
+
+### Architecture & Request Lifecycle:
+
+```text
+1. Client POSTs credentials:
+   POST /api/auth/login  { "username": "...", "password": "..." }
+            │
+            ▼
+2. AuthController calls AuthenticationManager.authenticate(...)
+   • CustomUserDetailsService loads UserDetails from PostgreSQL.
+   • BCryptPasswordEncoder verifies the password.
+   • On success, JwtService.generateToken(...) builds & signs JWT.
+   • Returns token to client in JSON response.
+            │
+            ▼
+3. Client makes protected request with Bearer header:
+   GET /api/foods
+   Header: Authorization: Bearer <jwt_token>
+            │
+            ▼
+4. JwtAuthenticationFilter (OncePerRequestFilter):
+   • Intercepts request before UsernamePasswordAuthenticationFilter.
+   • Parses "Bearer <token>" from Authorization header.
+   • Extracts username and validates signature & expiration with JwtService.
+   • Loads UserDetails and sets UsernamePasswordAuthenticationToken in SecurityContextHolder.
+            │
+            ▼
+5. AuthorizationFilter:
+   • Checks if SecurityContext is authenticated.
+   • Allows access (HTTP 200 OK) or rejects with 401 Unauthorized via JwtAuthenticationEntryPoint.
+```
+
+### Endpoints:
+
+1. **Register**: `POST /api/auth/register`
+   ```json
+   {
+     "username": "john_doe",
+     "password": "mypassword123",
+     "role": "ROLE_USER"
+   }
+   ```
+2. **Login**: `POST /api/auth/login`
+   ```json
+   {
+     "username": "john_doe",
+     "password": "mypassword123"
+   }
+   ```
+   **Response**:
+   ```json
+   {
+     "success": true,
+     "statusCode": 200,
+     "message": "Authentication successful",
+     "data": {
+       "token": "eyJhbGciOiJIUzI1NiJ9...",
+       "tokenType": "Bearer",
+       "username": "john_doe",
+       "roles": ["ROLE_USER"],
+       "expiresIn": 86400000
+     }
+   }
+   ```
+
+### Using JWT in Postman & Curl:
+* **Header**: `Authorization: Bearer <token>`
+* **Curl Example**:
+  ```bash
+  curl -H "Authorization: Bearer <token>" http://localhost:8081/api/foods
+  ```
+
+### Using JWT in Swagger UI:
+1. Open `http://localhost:8081/swagger-ui.html`
+2. Click the green **Authorize** button at the top right.
+3. Paste your JWT token into the `bearerAuth` field and click **Authorize**.
+4. Test any protected endpoint directly from the browser!
+
+
 
