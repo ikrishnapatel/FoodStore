@@ -47,6 +47,7 @@ public class SpringSeurityConfig {
                     "/swagger-ui.html",
                     "/v3/api-docs/**",
                     "/api/foods/health",
+                    "/actuator/**",
                     "/api/auth/**"
                 ).permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/users")

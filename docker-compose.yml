@@ -15,9 +15,9 @@ services:
     networks:
       - foodstore-network
 
-  app:
-    build: .
-    container_name: foodstore-app
+  app-1:
+    image: foodstore-app:latest
+    container_name: foodstore-app-1
     ports:
       - "8081:8081"
     environment:
@@ -29,8 +29,66 @@ services:
     networks:
       - foodstore-network
 
+  app-2:
+    image: foodstore-app:latest
+    container_name: foodstore-app-2
+    ports:
+      - "8082:8081"
+    environment:
+      - DB_URL=jdbc:postgresql://db:5432/foodstoredb
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+    depends_on:
+      - db
+    networks:
+      - foodstore-network
+
+  app-3:
+    image: foodstore-app:latest
+    container_name: foodstore-app-3
+    ports:
+      - "8083:8081"
+    environment:
+      - DB_URL=jdbc:postgresql://db:5432/foodstoredb
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+    depends_on:
+      - db
+    networks:
+      - foodstore-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: foodstore-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - foodstore-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: foodstore-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - foodstore-network
+
 volumes:
   postgres-data:
+  grafana-data:
 
 networks:
   foodstore-network:
