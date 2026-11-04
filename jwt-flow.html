@@ -1,0 +1,1755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spring Security & JWT Interactive Flow Visualizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --bg-card: rgba(17, 24, 39, 0.75);
+      --bg-card-hover: rgba(30, 41, 59, 0.85);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(99, 102, 241, 0.3);
+      --primary: #6366f1;
+      --primary-glow: rgba(99, 102, 241, 0.4);
+      --secondary: #06b6d4;
+      --accent-jwt: #ec4899;
+      --success: #10b981;
+      --success-glow: rgba(16, 185, 129, 0.35);
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --danger-glow: rgba(239, 68, 68, 0.35);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'Fira Code', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.1) 0px, transparent 50%),
+        radial-gradient(at 50% 50%, rgba(236, 72, 153, 0.05) 0px, transparent 60%);
+      background-attachment: fixed;
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      overflow-x: hidden;
+      line-height: 1.5;
+    }
+
+    /* Top Navigation Header */
+    header {
+      background: rgba(11, 15, 25, 0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px var(--primary-glow);
+    }
+
+    .brand-icon svg {
+      width: 22px;
+      height: 22px;
+      fill: #fff;
+    }
+
+    .brand h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      background: linear-gradient(to right, #fff, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .badges {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.25rem 0.65rem;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      letter-spacing: 0.03em;
+    }
+
+    .badge.active-spring {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    .badge.active-jwt {
+      background: rgba(236, 72, 153, 0.15);
+      color: #f472b6;
+      border-color: rgba(236, 72, 153, 0.3);
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 1.5rem 2rem 4rem;
+    }
+
+    /* Flow Mode Tabs */
+    .tabs-bar {
+      display: flex;
+      gap: 0.75rem;
+      background: rgba(15, 23, 42, 0.6);
+      padding: 0.4rem;
+      border-radius: 14px;
+      border: 1px solid var(--border-color);
+      margin-bottom: 1.5rem;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      flex: 1;
+      min-width: 200px;
+      background: transparent;
+      border: none;
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.25s ease;
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(6, 182, 212, 0.25));
+      color: #fff;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .tab-btn .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+
+    .tab-btn.active .dot {
+      background: var(--secondary);
+      box-shadow: 0 0 10px var(--secondary);
+    }
+
+    /* Controls Panel */
+    .controls-panel {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1rem 1.5rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+
+    .control-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-color);
+      color: #fff;
+      padding: 0.55rem 1.1rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), #4f46e5);
+      border-color: rgba(99, 102, 241, 0.5);
+      box-shadow: 0 2px 12px var(--primary-glow);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #4f46e5, var(--primary));
+      box-shadow: 0 4px 20px var(--primary-glow);
+    }
+
+    .step-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .step-counter {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: var(--secondary);
+      background: rgba(6, 182, 212, 0.1);
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+      border: 1px solid rgba(6, 182, 212, 0.25);
+    }
+
+    .speed-selector {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 0.25rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .speed-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .speed-btn.active {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    /* Main Visualizer Grid */
+    .visualizer-grid {
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 1200px) {
+      .visualizer-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Graph Canvas Card */
+    .graph-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 1.5rem;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      min-height: 640px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .graph-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .graph-title {
+      font-size: 1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .graph-legend {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .legend-color {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+    }
+
+    /* SVG Canvas */
+    .canvas-container {
+      flex: 1;
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 560px;
+    }
+
+    svg.flow-svg {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      overflow: visible;
+    }
+
+    /* Interactive Node Card inside SVG/HTML */
+    .flow-nodes-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .flow-node {
+      position: absolute;
+      pointer-events: auto;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(10px);
+      border: 1.5px solid var(--border-color);
+      border-radius: 12px;
+      padding: 0.75rem 1rem;
+      width: 190px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      user-select: none;
+    }
+
+    .flow-node:hover {
+      transform: translateY(-3px) scale(1.02);
+      border-color: var(--secondary);
+      box-shadow: 0 8px 30px rgba(6, 182, 212, 0.25);
+    }
+
+    .flow-node.active-step {
+      border-color: #38bdf8;
+      background: rgba(30, 41, 59, 0.95);
+      box-shadow: 0 0 25px rgba(56, 189, 248, 0.45);
+      animation: pulseNode 2s infinite;
+    }
+
+    @keyframes pulseNode {
+      0%, 100% {
+        box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+      }
+      50% {
+        box-shadow: 0 0 35px rgba(56, 189, 248, 0.65);
+      }
+    }
+
+    .flow-node.selected-node {
+      border-color: var(--accent-jwt) !important;
+      box-shadow: 0 0 25px rgba(236, 72, 153, 0.5) !important;
+    }
+
+    .node-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .node-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+    }
+
+    .node-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .node-subtitle {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .node-status {
+      margin-top: 0.4rem;
+      font-size: 0.68rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+      display: inline-block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Path animations */
+    .flow-path {
+      stroke: rgba(255, 255, 255, 0.12);
+      stroke-width: 2.5;
+      fill: none;
+      stroke-linecap: round;
+      transition: all 0.3s;
+    }
+
+    .flow-path.path-active {
+      stroke: var(--secondary);
+      stroke-width: 3.5;
+      filter: drop-shadow(0 0 8px var(--secondary));
+    }
+
+    .flow-path.path-jwt {
+      stroke: var(--accent-jwt);
+      stroke-width: 3.5;
+      filter: drop-shadow(0 0 8px var(--accent-jwt));
+    }
+
+    .flow-path.path-error {
+      stroke: var(--danger);
+      stroke-width: 3.5;
+      filter: drop-shadow(0 0 8px var(--danger));
+    }
+
+    /* Packet animation traveling on path */
+    .packet-beam {
+      fill: #38bdf8;
+      filter: drop-shadow(0 0 6px #38bdf8);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .packet-beam.beaming {
+      opacity: 1;
+    }
+
+    /* Right Inspector Panel */
+    .inspector-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .inspector-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      padding: 1.25rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    }
+
+    .card-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #e2e8f0;
+    }
+
+    .card-title span.badge-flow {
+      font-size: 0.7rem;
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid var(--border-accent);
+      color: #a5b4fc;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+    }
+
+    /* Step Narrative Box */
+    .step-narrative {
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 12px;
+      padding: 1rem;
+      border-left: 4px solid var(--secondary);
+      margin-bottom: 1rem;
+      transition: all 0.3s;
+    }
+
+    .step-narrative.narrative-success {
+      border-left-color: var(--success);
+    }
+
+    .step-narrative.narrative-error {
+      border-left-color: var(--danger);
+    }
+
+    .step-narrative h4 {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.35rem;
+    }
+
+    .step-narrative p {
+      font-size: 0.8rem;
+      color: #cbd5e1;
+      line-height: 1.45;
+    }
+
+    /* Component Details KV */
+    .details-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      font-size: 0.8rem;
+    }
+
+    .detail-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 0.55rem 0.75rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .detail-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+
+    .detail-val {
+      font-family: var(--font-mono);
+      color: #f1f5f9;
+      word-break: break-all;
+      font-size: 0.75rem;
+    }
+
+    .val-code {
+      color: #38bdf8;
+    }
+
+    .val-success {
+      color: #34d399;
+    }
+
+    .val-danger {
+      color: #f87171;
+    }
+
+    /* Live Token Card */
+    .token-preview {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 0.75rem;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      line-height: 1.6;
+      word-break: break-all;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    .jwt-part-header {
+      color: #f87171;
+    }
+
+    .jwt-part-payload {
+      color: #c084fc;
+    }
+
+    .jwt-part-sig {
+      color: #38bdf8;
+    }
+
+    /* Code Snippet Box */
+    .code-box {
+      background: #050811;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 0.85rem;
+      font-family: var(--font-mono);
+      font-size: 0.73rem;
+      color: #cbd5e1;
+      overflow-x: auto;
+      max-height: 200px;
+    }
+
+    .code-box .kw { color: #f472b6; }
+    .code-box .fn { color: #60a5fa; }
+    .code-box .str { color: #a7f3d0; }
+    .code-box .comment { color: #64748b; font-style: italic; }
+
+    /* Interactive Request Simulator Sandbox */
+    .sandbox-section {
+      margin-top: 2rem;
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 1.5rem;
+    }
+
+    .sandbox-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-top: 1rem;
+    }
+
+    @media (max-width: 900px) {
+      .sandbox-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+
+    .input-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .input-field, .select-field {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.6rem 0.85rem;
+      color: #fff;
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .input-field:focus, .select-field:focus {
+      border-color: var(--primary);
+    }
+
+    .jwt-builder-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .jwt-part-box {
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.6rem;
+      background: rgba(0, 0, 0, 0.25);
+    }
+
+    .jwt-part-box h5 {
+      font-size: 0.7rem;
+      margin-bottom: 0.4rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .response-view {
+      background: #050811;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1rem;
+      min-height: 220px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: #cbd5e1;
+      overflow-y: auto;
+      max-height: 320px;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      border-top: 1px solid var(--border-color);
+      margin-top: 3rem;
+    }
+
+    /* Quick status indicators */
+    .status-pill {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .pill-200 { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .pill-401 { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/></svg>
+      </div>
+      <div>
+        <h1>Spring Security & JWT Interactive Architecture</h1>
+        <p>BookStore Food Application • Request-to-Response Flow Visualizer</p>
+      </div>
+    </div>
+    <div class="badges">
+      <span class="badge active-spring">Spring Security 7.x</span>
+      <span class="badge active-jwt">JJWT 0.12.6</span>
+      <span class="badge">HMAC-SHA256</span>
+      <span class="badge">SessionCreationPolicy.STATELESS</span>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <!-- Flow Mode Selector Tabs -->
+    <div class="tabs-bar">
+      <button class="tab-btn active" id="tab-login" onclick="setFlowMode('login')">
+        <span class="dot"></span>
+        1. Login & Token Generation Flow (POST /api/auth/login)
+      </button>
+      <button class="tab-btn" id="tab-auth" onclick="setFlowMode('authenticated')">
+        <span class="dot"></span>
+        2. Authenticated Request Flow (GET /api/foods + Bearer)
+      </button>
+      <button class="tab-btn" id="tab-unauth" onclick="setFlowMode('unauthorized')">
+        <span class="dot"></span>
+        3. Unauthorized / 401 Rejection Flow (Expired/Bad Token)
+      </button>
+    </div>
+
+    <!-- Stepper & Simulation Controls -->
+    <div class="controls-panel">
+      <div class="control-actions">
+        <button class="btn btn-primary" id="btn-play" onclick="togglePlay()">
+          <span id="play-icon">▶</span> <span id="play-text">Play Simulation</span>
+        </button>
+        <button class="btn" onclick="prevStep()">◀ Previous</button>
+        <button class="btn" onclick="nextStep()">Next ▶</button>
+        <button class="btn" onclick="resetSimulation()">↺ Reset</button>
+      </div>
+
+      <div class="step-indicator">
+        <span>Step <span class="step-counter" id="step-number">1 / 6</span></span>
+        <span id="step-title" style="color: #fff; font-weight: 600;">Client initiates login request</span>
+      </div>
+
+      <div class="speed-selector">
+        <span style="font-size: 0.7rem; color: var(--text-muted); margin-left: 0.3rem;">Speed:</span>
+        <button class="speed-btn" onclick="setSpeed(0.5, this)">0.5x</button>
+        <button class="speed-btn active" onclick="setSpeed(1, this)">1x</button>
+        <button class="speed-btn" onclick="setSpeed(2, this)">2x</button>
+      </div>
+    </div>
+
+    <!-- Visualizer Canvas & Live Inspector -->
+    <div class="visualizer-grid">
+
+      <!-- Left: Interactive Graph Canvas -->
+      <div class="graph-card">
+        <div class="graph-header">
+          <div class="graph-title">
+            <span id="canvas-mode-title">Token Generation Architecture Flow</span>
+          </div>
+          <div class="graph-legend">
+            <div class="legend-item"><div class="legend-color" style="background: #38bdf8;"></div> Active Flow</div>
+            <div class="legend-item"><div class="legend-color" style="background: #ec4899;"></div> JWT Service</div>
+            <div class="legend-item"><div class="legend-color" style="background: #10b981;"></div> Database</div>
+            <div class="legend-item"><div class="legend-color" style="background: #ef4444;"></div> 401 Handler</div>
+          </div>
+        </div>
+
+        <div class="canvas-container" id="canvas-container">
+          <!-- SVG Connecting Curves and Beams -->
+          <svg class="flow-svg" id="flow-svg">
+            <defs>
+              <linearGradient id="grad-active" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#38bdf8" />
+                <stop offset="100%" stop-color="#818cf8" />
+              </linearGradient>
+              <linearGradient id="grad-jwt" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#ec4899" />
+                <stop offset="100%" stop-color="#f43f5e" />
+              </linearGradient>
+              <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="4" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
+
+            <!-- Dynamic Paths rendered by JS -->
+            <g id="svg-paths-layer"></g>
+
+            <!-- Dynamic Animated Packet Beam -->
+            <circle id="packet-beam" class="packet-beam" r="6" cx="0" cy="0"></circle>
+          </svg>
+
+          <!-- Interactive HTML Nodes positioned dynamically -->
+          <div class="flow-nodes-layer" id="nodes-layer">
+            <!-- Rendered by JS based on current flow mode -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Detailed Inspector Drawer -->
+      <div class="inspector-panel">
+
+        <!-- Narrative Card -->
+        <div class="inspector-card">
+          <div class="card-title">
+            <span>Execution Inspector</span>
+            <span class="badge-flow" id="inspector-badge">STEP 1</span>
+          </div>
+
+          <div class="step-narrative" id="step-narrative-box">
+            <h4 id="narrative-headline">Client Request Sent</h4>
+            <p id="narrative-description">The client sends a POST request with username and password in the request body.</p>
+          </div>
+
+          <div class="details-list">
+            <div class="detail-item">
+              <span class="detail-label">Active Component</span>
+              <span class="detail-val val-code" id="detail-component">Postman / Browser / Client</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Method / Operation</span>
+              <span class="detail-val" id="detail-operation">POST /api/auth/login</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Input Payload / Header</span>
+              <span class="detail-val" id="detail-input">{"username":"admin", "password":"password123"}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Result / State Mutated</span>
+              <span class="detail-val val-success" id="detail-result">Request Dispatched to Servlet Container</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Token Live Preview Card -->
+        <div class="inspector-card">
+          <div class="card-title">
+            <span>JWT Token Inspector (JJWT 0.12.6)</span>
+            <span class="badge-flow" style="color: #f472b6; border-color: rgba(244, 114, 182, 0.3);">HMAC-SHA256</span>
+          </div>
+          <p style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+            Token structure: <span class="jwt-part-header">Header (Red)</span> . <span class="jwt-part-payload">Payload Claims (Purple)</span> . <span class="jwt-part-sig">Signature (Cyan)</span>
+          </p>
+          <div class="token-preview" id="token-preview-box">
+            <span class="jwt-part-header">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9</span>.<span class="jwt-part-payload">eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbIlJPTEVfQURNSU4iXSwiaWF0IjoxNzM1NzAwMDAwLCJleHAiOjE3MzU3ODY0MDB9</span>.<span class="jwt-part-sig">4g87h3rK9...zL</span>
+          </div>
+        </div>
+
+        <!-- Exact Code Reference Card -->
+        <div class="inspector-card">
+          <div class="card-title">
+            <span>Executing Java Snippet</span>
+            <span class="badge-flow" id="code-file-badge">SpringSeurityConfig.java</span>
+          </div>
+          <div class="code-box" id="code-box">
+<span class="comment">// Spring Security stateless filter chain</span>
+http.sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+    .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Interactive Sandbox Playground -->
+    <div class="sandbox-section">
+      <div class="card-title" style="font-size: 1.1rem; margin-bottom: 0.5rem;">
+        <span>Interactive Request Sandbox (Test Your JWT Security)</span>
+        <span class="badge active-jwt">Live Sandbox</span>
+      </div>
+      <p style="font-size: 0.8rem; color: var(--text-muted);">
+        Experiment with different tokens, credentials, and endpoints to observe real-time Spring Security filter validation.
+      </p>
+
+      <div class="sandbox-grid">
+        <!-- Sandbox Inputs -->
+        <div>
+          <div class="input-group">
+            <label class="input-label">HTTP Method & Endpoint</label>
+            <select class="select-field" id="sb-endpoint" onchange="updateSandboxFields()">
+              <option value="/api/auth/login">POST /api/auth/login (Public Auth Endpoint)</option>
+              <option value="/api/foods/health">GET /api/foods/health (Public Health Endpoint)</option>
+              <option value="/api/foods" selected>GET /api/foods (Secured: Any Authenticated User)</option>
+              <option value="/api/users">POST /api/users (Secured: ADMIN Role Only)</option>
+            </select>
+          </div>
+
+          <div class="input-group" id="sb-auth-type-group">
+            <label class="input-label">Authorization Header Mode</label>
+            <select class="select-field" id="sb-token-mode" onchange="updateSandboxToken()">
+              <option value="valid_admin">Bearer Token (ROLE_ADMIN - Valid 24h)</option>
+              <option value="valid_user">Bearer Token (ROLE_USER - Valid 24h)</option>
+              <option value="expired">Bearer Token (EXPIRED Signature)</option>
+              <option value="tampered">Bearer Token (TAMPERED Payload / Invalid HMAC)</option>
+              <option value="none">No Authorization Header (Anonymous)</option>
+              <option value="basic">HTTP Basic (admin:password)</option>
+            </select>
+          </div>
+
+          <div class="input-group" id="sb-credentials-group" style="display: none;">
+            <label class="input-label">Login Credentials (JSON)</label>
+            <input type="text" class="input-field" id="sb-login-creds" value='{"username":"admin", "password":"password123"}'>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label">Authorization Header Value</label>
+            <input type="text" class="input-field" id="sb-auth-header" readonly style="font-family: var(--font-mono); font-size: 0.75rem; color: #38bdf8;">
+          </div>
+
+          <button class="btn btn-primary" onclick="simulateSandboxRequest()" style="width: 100%; justify-content: center; margin-top: 0.5rem;">
+            ⚡ Send Request & Inspect Response
+          </button>
+        </div>
+
+        <!-- Sandbox Output Response View -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <span class="input-label">Simulated Server Response</span>
+            <span id="sb-status-pill" class="status-pill pill-200">HTTP 200 OK</span>
+          </div>
+          <div class="response-view" id="sb-response-view">
+// Response preview will appear here...
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <p>Spring Security 7.x & JWT Flow Visualizer • Foodstore REST API Architecture</p>
+    <p style="margin-top: 0.3rem; font-size: 0.72rem;">Configured with JJWT 0.12.6, BCryptPasswordEncoder, and Stateless Session Management</p>
+  </footer>
+
+  <script>
+    // Flows Definition: Nodes & Steps
+    const FLOW_CONFIGS = {
+      login: {
+        title: "Token Generation Architecture Flow (POST /api/auth/login)",
+        nodes: [
+          { id: "client", title: "Client / Postman", sub: "HTTP Request", icon: "🌐", x: 40, y: 80, color: "#38bdf8" },
+          { id: "filter_csrf", title: "CsrfFilter", sub: "csrf().disable()", icon: "🛡️", x: 260, y: 80, color: "#94a3b8" },
+          { id: "auth_ctrl", title: "AuthController", sub: "POST /api/auth/login", icon: "⚡", x: 490, y: 80, color: "#818cf8" },
+          { id: "auth_mgr", title: "AuthenticationManager", sub: "ProviderManager", icon: "🔑", x: 730, y: 80, color: "#f59e0b" },
+          { id: "dao_prov", title: "DaoAuthenticationProvider", sub: "Coordinate Auth", icon: "⚙️", x: 730, y: 240, color: "#f59e0b" },
+          { id: "user_details", title: "CustomUserDetailsService", sub: "loadUserByUsername()", icon: "👤", x: 490, y: 240, color: "#06b6d4" },
+          { id: "postgres", title: "PostgreSQL Database", sub: "users Table (BCrypt Hash)", icon: "🗄️", x: 260, y: 240, color: "#10b981" },
+          { id: "bcrypt", title: "BCryptPasswordEncoder", sub: "matches(raw, hash)", icon: "🔒", x: 490, y: 400, color: "#a855f7" },
+          { id: "jwt_svc", title: "JwtService", sub: "generateToken(userDetails)", icon: "💎", x: 730, y: 400, color: "#ec4899" },
+          { id: "response", title: "Client Received Token", sub: "AuthResponse (Bearer)", icon: "📦", x: 40, y: 400, color: "#10b981" }
+        ],
+        steps: [
+          {
+            headline: "1. Client Sends Login Request",
+            desc: "Client submits POST /api/auth/login with JSON body containing credentials (username and password).",
+            activeNode: "client",
+            fromNode: "client",
+            toNode: "filter_csrf",
+            component: "Client (Postman / Browser)",
+            operation: "POST /api/auth/login",
+            input: '{"username":"admin", "password":"password123"}',
+            result: "HTTP Request dispatched into Spring Filter Chain",
+            file: "AuthController.java",
+            code: `@PostMapping("/login")\npublic ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody AuthRequest req) {\n    // Initiate authentication\n}`,
+            token: "N/A (Requesting token)"
+          },
+          {
+            headline: "2. Passes CsrfFilter & Reaches AuthController",
+            desc: "CSRF protection is disabled for stateless REST APIs. Request hits AuthController.login() endpoint.",
+            activeNode: "auth_ctrl",
+            fromNode: "filter_csrf",
+            toNode: "auth_ctrl",
+            component: "AuthController",
+            operation: "login(AuthRequest authRequest)",
+            input: 'AuthRequest("admin", "password123")',
+            result: "Calls authenticationManager.authenticate()",
+            file: "AuthController.java",
+            code: `Authentication authentication = authenticationManager.authenticate(\n    new UsernamePasswordAuthenticationToken(req.getUsername(), req.getPassword())\n);`,
+            token: "Awaiting authentication"
+          },
+          {
+            headline: "3. AuthenticationManager Delegates to DaoAuthenticationProvider",
+            desc: "AuthenticationManager invokes DaoAuthenticationProvider, which queries CustomUserDetailsService.",
+            activeNode: "dao_prov",
+            fromNode: "auth_ctrl",
+            toNode: "auth_mgr",
+            component: "DaoAuthenticationProvider",
+            operation: "retrieveUser(username, token)",
+            input: 'Username: "admin"',
+            result: "Calls userDetailsService.loadUserByUsername('admin')",
+            file: "SpringSeurityConfig.java",
+            code: `@Bean\npublic AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {\n    return authConfig.getAuthenticationManager();\n}`,
+            token: "Awaiting authentication"
+          },
+          {
+            headline: "4. CustomUserDetailsService Loads User from PostgreSQL",
+            desc: "Queries PostgreSQL database table 'users' by username and builds Spring Security's UserDetails with BCrypt hash.",
+            activeNode: "user_details",
+            fromNode: "dao_prov",
+            toNode: "user_details",
+            component: "CustomUserDetailsService & UserRepository",
+            operation: "userRepository.findByName('admin')",
+            input: 'SELECT * FROM users WHERE name = "admin"',
+            result: 'User loaded: role=ROLE_ADMIN, password=$2a$10$...',
+            file: "CustomUserDetailsService.java",
+            code: `User user = userRepository.findByName(username)\n    .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));\nreturn User.withUsername(user.getName())\n    .password(user.getPassword())\n    .roles(role).build();`,
+            token: "DB User Details Loaded"
+          },
+          {
+            headline: "5. BCryptPasswordEncoder Validates Password Hash",
+            desc: "BCrypt extracts salt from the stored DB hash and checks if the incoming raw password matches.",
+            activeNode: "bcrypt",
+            fromNode: "user_details",
+            toNode: "bcrypt",
+            component: "BCryptPasswordEncoder",
+            operation: "passwordEncoder.matches(rawPassword, encodedPassword)",
+            input: 'raw="password123", hash="$2a$10$eO1v8..."',
+            result: "Password matches! (true) -> Authentication successful",
+            file: "SpringSeurityConfig.java",
+            code: `@Bean\npublic PasswordEncoder passwordEncoder() {\n    return new BCryptPasswordEncoder();\n}`,
+            token: "Authenticated: Principal = admin"
+          },
+          {
+            headline: "6. JwtService Generates & Signs Token, Returns AuthResponse",
+            desc: "JwtService builds JJWT payload with subject, roles, issuedAt, and expiration (24h), then signs with HMAC-SHA256 secret.",
+            activeNode: "jwt_svc",
+            fromNode: "bcrypt",
+            toNode: "jwt_svc",
+            component: "JwtService & AuthController",
+            operation: "jwtService.generateToken(userDetails)",
+            input: 'subject: "admin", claims: {"roles":["ROLE_ADMIN"]}',
+            result: "Compact JWT generated & returned to client in AuthResponse",
+            file: "JwtService.java",
+            code: `return Jwts.builder()\n    .claims(extraClaims)\n    .subject(username)\n    .issuedAt(new Date())\n    .expiration(new Date(System.currentTimeMillis() + jwtExpiration))\n    .signWith(getSignInKey())\n    .compact();`,
+            token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbIlJPTEVfQURNSU4iXSwiaWF0IjoxNzM1NzAwMDAwLCJleHAiOjE3MzU3ODY0MDB9.4g87h3rK9...zL"
+          }
+        ]
+      },
+
+      authenticated: {
+        title: "Authenticated Request Flow (GET /api/foods with Bearer Token)",
+        nodes: [
+          { id: "client", title: "Client / Postman", sub: "GET /api/foods", icon: "🌐", x: 40, y: 80, color: "#38bdf8" },
+          { id: "jwt_filter", title: "JwtAuthenticationFilter", sub: "OncePerRequestFilter", icon: "🔍", x: 270, y: 80, color: "#818cf8" },
+          { id: "jwt_service", title: "JwtService", sub: "extractUsername() & verify", icon: "💎", x: 520, y: 80, color: "#ec4899" },
+          { id: "user_service", title: "CustomUserDetailsService", sub: "loadUserByUsername()", icon: "👤", x: 740, y: 80, color: "#06b6d4" },
+          { id: "sec_context", title: "SecurityContextHolder", sub: "setAuthentication(authToken)", icon: "🔐", x: 740, y: 260, color: "#f59e0b" },
+          { id: "auth_filter", title: "AuthorizationFilter", sub: "hasRole() / authenticated()", icon: "⚖️", x: 520, y: 260, color: "#818cf8" },
+          { id: "dispatcher", title: "DispatcherServlet", sub: "Spring Web Routing", icon: "🔀", x: 270, y: 260, color: "#38bdf8" },
+          { id: "controller", title: "FoodController", sub: "getAllFoods()", icon: "🥗", x: 40, y: 260, color: "#10b981" },
+          { id: "db_foods", title: "PostgreSQL Database", sub: "food Table", icon: "🗄️", x: 40, y: 420, color: "#10b981" },
+          { id: "response_ok", title: "Client Response (200)", sub: "ApiResponse<List<Food>>", icon: "✅", x: 270, y: 420, color: "#10b981" }
+        ],
+        steps: [
+          {
+            headline: "1. Client Sends Protected Request with Bearer Token",
+            desc: "Client calls GET /api/foods with header: 'Authorization: Bearer eyJhbGci...'.",
+            activeNode: "client",
+            fromNode: "client",
+            toNode: "jwt_filter",
+            component: "Client (Postman / Browser / Swagger)",
+            operation: "GET /api/foods",
+            input: 'Header: Authorization: Bearer <jwt_token>',
+            result: "Request enters Servlet Container filter chain",
+            file: "SpringSeurityConfig.java",
+            code: `.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)`,
+            token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbIlJPTEVfQURNSU4iXX0..."
+          },
+          {
+            headline: "2. JwtAuthenticationFilter Intercepts Request",
+            desc: "Extracts 'Bearer ' token from Authorization header and calls JwtService to parse claims and subject.",
+            activeNode: "jwt_filter",
+            fromNode: "client",
+            toNode: "jwt_filter",
+            component: "JwtAuthenticationFilter",
+            operation: "doFilterInternal(request, response, filterChain)",
+            input: 'authHeader.startsWith("Bearer ") == true',
+            result: 'Token substring extracted: jwt = authHeader.substring(7)',
+            file: "JwtAuthenticationFilter.java",
+            code: `final String authHeader = request.getHeader("Authorization");\nif (authHeader == null || !authHeader.startsWith("Bearer ")) {\n    filterChain.doFilter(request, response); return;\n}\nfinal String jwt = authHeader.substring(7);`,
+            token: "Token Extracted"
+          },
+          {
+            headline: "3. JwtService Verifies Cryptographic Signature & Expiry",
+            desc: "Parses signed claims using SecretKey. Validates token is not expired and extracts username (subject: 'admin').",
+            activeNode: "jwt_service",
+            fromNode: "jwt_filter",
+            toNode: "jwt_service",
+            component: "JwtService",
+            operation: "jwtService.extractUsername(jwt)",
+            input: 'Token parsed with Keys.hmacShaKeyFor(secret)',
+            result: 'Username: "admin", Expiration: valid, Signature: verified',
+            file: "JwtService.java",
+            code: `public String extractUsername(String token) {\n    return extractClaim(token, Claims::getSubject);\n}\npublic boolean isTokenValid(String token, UserDetails userDetails) {\n    return username.equals(userDetails.getUsername()) && !isTokenExpired(token);\n}`,
+            token: "Signature Valid & Verified"
+          },
+          {
+            headline: "4. Load UserDetails & Verify Token Validity",
+            desc: "Loads UserDetails from CustomUserDetailsService and confirms isTokenValid(jwt, userDetails).",
+            activeNode: "user_service",
+            fromNode: "jwt_service",
+            toNode: "user_service",
+            component: "CustomUserDetailsService",
+            operation: "loadUserByUsername('admin')",
+            input: 'Username: "admin"',
+            result: 'UserDetails loaded with Authorities: [ROLE_ADMIN]',
+            file: "CustomUserDetailsService.java",
+            code: `UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);\nif (jwtService.isTokenValid(jwt, userDetails)) { ... }`,
+            token: "UserDetails matched"
+          },
+          {
+            headline: "5. Set UsernamePasswordAuthenticationToken in SecurityContextHolder",
+            desc: "Spring Security's thread-local SecurityContext is populated with authenticated principal and roles.",
+            activeNode: "sec_context",
+            fromNode: "user_service",
+            toNode: "sec_context",
+            component: "SecurityContextHolder",
+            operation: "SecurityContextHolder.getContext().setAuthentication(authToken)",
+            input: 'UsernamePasswordAuthenticationToken(admin, null, [ROLE_ADMIN])',
+            result: 'SecurityContext is now Authenticated!',
+            file: "JwtAuthenticationFilter.java",
+            code: `UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(\n    userDetails, null, userDetails.getAuthorities());\nauthToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));\nSecurityContextHolder.getContext().setAuthentication(authToken);`,
+            token: "SecurityContext Authenticated"
+          },
+          {
+            headline: "6. AuthorizationFilter Verifies Permissions & Dispatches",
+            desc: "AuthorizationFilter checks rules (.anyRequest().authenticated()). User is authorized! Dispatches to Controller -> DB -> Returns 200 OK.",
+            activeNode: "controller",
+            fromNode: "sec_context",
+            toNode: "controller",
+            component: "FoodController & DispatcherServlet",
+            operation: "foodService.getAllFoods()",
+            input: 'SecurityContext: Authenticated as admin',
+            result: 'HTTP 200 OK with List of Foods JSON',
+            file: "FoodController.java",
+            code: `@GetMapping\npublic ResponseEntity<ApiResponse<List<Food>>> getAllFoods() {\n    return ResponseEntity.ok(ApiResponse.success("Foods retrieved successfully", foodService.getAllFoods()));\n}`,
+            token: "Request completed successfully (200 OK)"
+          }
+        ]
+      },
+
+      unauthorized: {
+        title: "Unauthorized / 401 Rejection Architecture Flow (Expired or Bad Token)",
+        nodes: [
+          { id: "client_fail", title: "Client / Postman", sub: "GET /api/foods (Bad Token)", icon: "🌐", x: 50, y: 100, color: "#ef4444" },
+          { id: "jwt_filter_fail", title: "JwtAuthenticationFilter", sub: "Token verification fails", icon: "⚠️", x: 290, y: 100, color: "#f59e0b" },
+          { id: "sec_context_fail", title: "SecurityContextHolder", sub: "Authentication = NULL", icon: "🔒", x: 530, y: 100, color: "#64748b" },
+          { id: "auth_filter_fail", title: "AuthorizationFilter", sub: "Enforce authenticated()", icon: "⚖️", x: 530, y: 280, color: "#f59e0b" },
+          { id: "entry_point", title: "JwtAuthenticationEntryPoint", sub: "commence(request, response)", icon: "⛔", x: 290, y: 280, color: "#ef4444" },
+          { id: "resp_401", title: "Client Receives 401", sub: "ApiResponse.error(401)", icon: "🚫", x: 50, y: 280, color: "#ef4444" }
+        ],
+        steps: [
+          {
+            headline: "1. Client Sends Request with Invalid or Expired JWT",
+            desc: "Client calls protected endpoint GET /api/foods with an expired token or tampered signature.",
+            activeNode: "client_fail",
+            fromNode: "client_fail",
+            toNode: "jwt_filter_fail",
+            component: "Client (Postman / Browser)",
+            operation: "GET /api/foods",
+            input: 'Authorization: Bearer <tampered_or_expired_jwt>',
+            result: "Request reaches JwtAuthenticationFilter",
+            file: "JwtAuthenticationFilter.java",
+            code: `final String jwt = authHeader.substring(7);`,
+            token: "Invalid or Expired Token"
+          },
+          {
+            headline: "2. JwtAuthenticationFilter Catches Exception & Disallows Auth",
+            desc: "JwtService detects expired timestamp or invalid HMAC signature and throws ExpiredJwtException or SignatureException. Filter logs warning and does NOT set SecurityContext.",
+            activeNode: "jwt_filter_fail",
+            fromNode: "client_fail",
+            toNode: "jwt_filter_fail",
+            component: "JwtAuthenticationFilter",
+            operation: "try { jwtService.extractUsername(jwt) } catch (Exception e)",
+            input: 'Expired or Tampered JWT',
+            result: 'log.warn("Cannot authenticate request with JWT: Expired")',
+            file: "JwtAuthenticationFilter.java",
+            code: `try {\n    final String username = jwtService.extractUsername(jwt);\n    // ...\n} catch (Exception e) {\n    log.warn("Cannot authenticate request with JWT: {}", e.getMessage());\n}`,
+            token: "SecurityContext remains empty (NULL)"
+          },
+          {
+            headline: "3. SecurityContextHolder Remains Unauthenticated (null)",
+            desc: "Since token validation failed, SecurityContextHolder has NO authenticated principal. Filter continues to next filter in chain.",
+            activeNode: "sec_context_fail",
+            fromNode: "jwt_filter_fail",
+            toNode: "sec_context_fail",
+            component: "SecurityContextHolder",
+            operation: "SecurityContextHolder.getContext().getAuthentication() == null",
+            input: 'No authentication object set',
+            result: 'Anonymous / Unauthenticated state preserved',
+            file: "SpringSeurityConfig.java",
+            code: `.authorizeHttpRequests(auth -> auth\n    .requestMatchers("/swagger-ui/**", "/api/auth/**").permitAll()\n    .anyRequest().authenticated()\n)`,
+            token: "Unauthenticated"
+          },
+          {
+            headline: "4. AuthorizationFilter Rejects Anonymous Request",
+            desc: "AuthorizationFilter evaluates URL security: '/api/foods' requires authenticated(). Anonymous request is blocked and delegates to AuthenticationEntryPoint.",
+            activeNode: "auth_filter_fail",
+            fromNode: "sec_context_fail",
+            toNode: "auth_filter_fail",
+            component: "AuthorizationFilter",
+            operation: "AuthorizationFilter.doFilter()",
+            input: 'AccessDeniedException / InsufficientAuthenticationException',
+            result: "Triggers AuthenticationEntryPoint.commence()",
+            file: "SpringSeurityConfig.java",
+            code: `.exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))`,
+            token: "Access Denied"
+          },
+          {
+            headline: "5. JwtAuthenticationEntryPoint Formats JSON 401 Response",
+            desc: "JwtAuthenticationEntryPoint intercepts the 401 error and writes a structured JSON ApiResponse error directly to the response output stream.",
+            activeNode: "entry_point",
+            fromNode: "auth_filter_fail",
+            toNode: "entry_point",
+            component: "JwtAuthenticationEntryPoint",
+            operation: "commence(request, response, authException)",
+            input: 'authException = Full authentication is required',
+            result: 'HTTP 401 JSON written: {"success":false, "statusCode":401}',
+            file: "JwtAuthenticationEntryPoint.java",
+            code: `response.setContentType(MediaType.APPLICATION_JSON_VALUE);\nresponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);\nApiResponse<Object> apiResponse = ApiResponse.error(\n    401, "Unauthorized: Full authentication is required...", null);\nresponse.getWriter().write(objectMapper.writeValueAsString(apiResponse));`,
+            token: "401 Unauthorized Response dispatched"
+          },
+          {
+            headline: "6. Client Receives Clean JSON 401 Response",
+            desc: "The client receives HTTP 401 Unauthorized with descriptive JSON explaining that valid authentication credentials are required.",
+            activeNode: "resp_401",
+            fromNode: "entry_point",
+            toNode: "resp_401",
+            component: "Client (Received 401)",
+            operation: "HTTP 401 Response Received",
+            input: 'N/A',
+            result: '{\n  "success": false,\n  "statusCode": 401,\n  "message": "Unauthorized: Full authentication is required to access this resource",\n  "data": null\n}',
+            file: "ApiResponse.java",
+            code: `ApiResponse.error(401, "Unauthorized: Full authentication is required to access this resource", null)`,
+            token: "Rejected"
+          }
+        ]
+      }
+    };
+
+    // State
+    let currentMode = "login";
+    let currentStep = 0;
+    let isPlaying = false;
+    let playTimer = null;
+    let speedFactor = 1;
+
+    // Initialize
+    function init() {
+      setFlowMode("login");
+      updateSandboxFields();
+    }
+
+    function setFlowMode(mode) {
+      if (isPlaying) togglePlay();
+      currentMode = mode;
+      currentStep = 0;
+
+      // Update tabs
+      document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+      if (mode === "login") document.getElementById("tab-login").classList.add("active");
+      if (mode === "authenticated") document.getElementById("tab-auth").classList.add("active");
+      if (mode === "unauthorized") document.getElementById("tab-unauth").classList.add("active");
+
+      document.getElementById("canvas-mode-title").innerText = FLOW_CONFIGS[mode].title;
+
+      renderNodesAndPaths();
+      updateStepUI();
+    }
+
+    function renderNodesAndPaths() {
+      const config = FLOW_CONFIGS[currentMode];
+      const nodesLayer = document.getElementById("nodes-layer");
+      const pathsLayer = document.getElementById("svg-paths-layer");
+
+      nodesLayer.innerHTML = "";
+      pathsLayer.innerHTML = "";
+
+      // Render Nodes
+      config.nodes.forEach(node => {
+        const div = document.createElement("div");
+        div.className = "flow-node";
+        div.id = `node-${node.id}`;
+        div.style.left = `${node.x}px`;
+        div.style.top = `${node.y}px`;
+        div.onclick = () => selectNode(node);
+
+        div.innerHTML = `
+          <div class="node-header">
+            <div class="node-icon" style="background: ${node.color}22; color: ${node.color};">${node.icon}</div>
+            <div class="node-title">${node.title}</div>
+          </div>
+          <div class="node-subtitle">${node.sub}</div>
+          <div class="node-status" id="status-${node.id}">Idle</div>
+        `;
+        nodesLayer.appendChild(div);
+      });
+
+      // Render Connecting Curves between adjacent steps
+      for (let i = 0; i < config.steps.length; i++) {
+        const step = config.steps[i];
+        const from = config.nodes.find(n => n.id === step.fromNode);
+        const to = config.nodes.find(n => n.id === step.toNode);
+
+        if (from && to && from.id !== to.id) {
+          const pathId = `path-${from.id}-${to.id}`;
+          if (!document.getElementById(pathId)) {
+            const startX = from.x + 95;
+            const startY = from.y + 45;
+            const endX = to.x + 95;
+            const endY = to.y + 45;
+
+            // Curve calculation
+            const dx = endX - startX;
+            const dy = endY - startY;
+            const cx1 = startX + dx * 0.4;
+            const cy1 = startY;
+            const cx2 = startX + dx * 0.6;
+            const cy2 = endY;
+
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("id", pathId);
+            path.setAttribute("class", "flow-path");
+            path.setAttribute("d", `M ${startX} ${startY} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${endX} ${endY}`);
+            pathsLayer.appendChild(path);
+          }
+        }
+      }
+    }
+
+    function updateStepUI() {
+      const config = FLOW_CONFIGS[currentMode];
+      const step = config.steps[currentStep];
+
+      // Update Counter
+      document.getElementById("step-number").innerText = `${currentStep + 1} / ${config.steps.length}`;
+      document.getElementById("step-title").innerText = step.headline;
+      document.getElementById("inspector-badge").innerText = `STEP ${currentStep + 1} of ${config.steps.length}`;
+
+      // Update Inspector Narrative
+      const narrativeBox = document.getElementById("step-narrative-box");
+      narrativeBox.className = "step-narrative";
+      if (currentMode === "unauthorized" && currentStep >= 3) {
+        narrativeBox.classList.add("narrative-error");
+      } else if (currentStep === config.steps.length - 1) {
+        narrativeBox.classList.add("narrative-success");
+      }
+
+      document.getElementById("narrative-headline").innerText = step.headline;
+      document.getElementById("narrative-description").innerText = step.desc;
+
+      // Update KV details
+      document.getElementById("detail-component").innerText = step.component;
+      document.getElementById("detail-operation").innerText = step.operation;
+      document.getElementById("detail-input").innerText = step.input;
+      document.getElementById("detail-result").innerText = step.result;
+
+      // Update Code Box
+      document.getElementById("code-file-badge").innerText = step.file;
+      document.getElementById("code-box").innerText = step.code;
+
+      // Highlight active node
+      document.querySelectorAll(".flow-node").forEach(node => {
+        node.classList.remove("active-step");
+      });
+      const activeEl = document.getElementById(`node-${step.activeNode}`);
+      if (activeEl) {
+        activeEl.classList.add("active-step");
+      }
+
+      // Update node status texts
+      config.nodes.forEach(n => {
+        const sEl = document.getElementById(`status-${n.id}`);
+        if (sEl) {
+          if (n.id === step.activeNode) {
+            sEl.innerText = "ACTIVE";
+            sEl.style.color = "#38bdf8";
+            sEl.style.background = "rgba(56, 189, 248, 0.15)";
+          } else {
+            sEl.innerText = "Standby";
+            sEl.style.color = "var(--text-muted)";
+            sEl.style.background = "rgba(255, 255, 255, 0.05)";
+          }
+        }
+      });
+
+      // Animate SVG Path & Packet Beam
+      animatePathBeam(step.fromNode, step.toNode);
+    }
+
+    function animatePathBeam(fromId, toId) {
+      const beam = document.getElementById("packet-beam");
+      document.querySelectorAll(".flow-path").forEach(p => {
+        p.classList.remove("path-active", "path-jwt", "path-error");
+      });
+
+      const path = document.getElementById(`path-${fromId}-${toId}`);
+      if (path) {
+        if (currentMode === "unauthorized" && currentStep >= 2) {
+          path.classList.add("path-error");
+        } else if (fromId.includes("jwt") || toId.includes("jwt")) {
+          path.classList.add("path-jwt");
+        } else {
+          path.classList.add("path-active");
+        }
+
+        // Animate packet along path
+        beam.classList.add("beaming");
+        const pathLength = path.getTotalLength();
+        let start = null;
+        const duration = 750 / speedFactor;
+
+        function stepBeam(timestamp) {
+          if (!start) start = timestamp;
+          const progress = Math.min((timestamp - start) / duration, 1);
+          const point = path.getPointAtLength(progress * pathLength);
+          beam.setAttribute("cx", point.x);
+          beam.setAttribute("cy", point.y);
+
+          if (progress < 1) {
+            requestAnimationFrame(stepBeam);
+          }
+        }
+        requestAnimationFrame(stepBeam);
+      } else {
+        beam.classList.remove("beaming");
+      }
+    }
+
+    function selectNode(node) {
+      document.querySelectorAll(".flow-node").forEach(n => n.classList.remove("selected-node"));
+      const el = document.getElementById(`node-${node.id}`);
+      if (el) el.classList.add("selected-node");
+
+      document.getElementById("detail-component").innerText = node.title;
+      document.getElementById("detail-operation").innerText = node.sub;
+      document.getElementById("narrative-headline").innerText = `Inspecting: ${node.title}`;
+      document.getElementById("narrative-description").innerText = `Component configured in BookStore Spring Boot application. Role: ${node.sub}.`;
+    }
+
+    function nextStep() {
+      const max = FLOW_CONFIGS[currentMode].steps.length;
+      if (currentStep < max - 1) {
+        currentStep++;
+        updateStepUI();
+      } else {
+        if (isPlaying) togglePlay();
+      }
+    }
+
+    function prevStep() {
+      if (currentStep > 0) {
+        currentStep--;
+        updateStepUI();
+      }
+    }
+
+    function resetSimulation() {
+      if (isPlaying) togglePlay();
+      currentStep = 0;
+      updateStepUI();
+    }
+
+    function togglePlay() {
+      isPlaying = !isPlaying;
+      const playBtn = document.getElementById("btn-play");
+      const playIcon = document.getElementById("play-icon");
+      const playText = document.getElementById("play-text");
+
+      if (isPlaying) {
+        playIcon.innerText = "⏸";
+        playText.innerText = "Pause";
+        playBtn.classList.replace("btn-primary", "btn");
+        startAutoPlay();
+      } else {
+        playIcon.innerText = "▶";
+        playText.innerText = "Play Simulation";
+        playBtn.classList.replace("btn", "btn-primary");
+        clearInterval(playTimer);
+      }
+    }
+
+    function startAutoPlay() {
+      clearInterval(playTimer);
+      playTimer = setInterval(() => {
+        const max = FLOW_CONFIGS[currentMode].steps.length;
+        if (currentStep < max - 1) {
+          nextStep();
+        } else {
+          // Loop back
+          currentStep = 0;
+          updateStepUI();
+        }
+      }, 2500 / speedFactor);
+    }
+
+    function setSpeed(factor, btn) {
+      speedFactor = factor;
+      document.querySelectorAll(".speed-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      if (isPlaying) startAutoPlay();
+    }
+
+    // Sandbox Playground Logic
+    function updateSandboxFields() {
+      const endpoint = document.getElementById("sb-endpoint").value;
+      const authGroup = document.getElementById("sb-auth-type-group");
+      const credsGroup = document.getElementById("sb-credentials-group");
+
+      if (endpoint === "/api/auth/login") {
+        authGroup.style.display = "none";
+        credsGroup.style.display = "flex";
+        document.getElementById("sb-auth-header").value = "N/A (Sending JSON credentials in body)";
+      } else {
+        authGroup.style.display = "flex";
+        credsGroup.style.display = "none";
+        updateSandboxToken();
+      }
+    }
+
+    function updateSandboxToken() {
+      const mode = document.getElementById("sb-token-mode").value;
+      const headerInput = document.getElementById("sb-auth-header");
+
+      if (mode === "valid_admin") {
+        headerInput.value = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbIlJPTEVfQURNSU4iXSwiaWF0IjoxNzM1NzAwMDAwLCJleHAiOjE3MzU3ODY0MDB9.validSignatureForAdmin123";
+      } else if (mode === "valid_user") {
+        headerInput.value = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huX3VzZXIiLCJyb2xlcyI6WyJST0xFX1VTRVIiXSwiaWF0IjoxNzM1NzAwMDAwLCJleHAiOjE3MzU3ODY0MDB9.validSignatureForUser456";
+      } else if (mode === "expired") {
+        headerInput.value = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbIlJPTEVfQURNSU4iXSwiaWF0IjoxNjAwMDAwMDAwLCJleHAiOjE2MDAwODY0MDB9.expiredSignature789";
+      } else if (mode === "tampered") {
+        headerInput.value = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJoYWNrZXIiLCJyb2xlcyI6WyJST0xFX0FETUlOIl19.TAMPERED_INVALID_SIGNATURE";
+      } else if (mode === "basic") {
+        headerInput.value = "Basic YWRtaW46cGFzc3dvcmQxMjM=";
+      } else {
+        headerInput.value = "(None)";
+      }
+    }
+
+    function simulateSandboxRequest() {
+      const endpoint = document.getElementById("sb-endpoint").value;
+      const mode = document.getElementById("sb-token-mode").value;
+      const respView = document.getElementById("sb-response-view");
+      const statusPill = document.getElementById("sb-status-pill");
+
+      if (endpoint === "/api/auth/login") {
+        const creds = document.getElementById("sb-login-creds").value;
+        try {
+          const parsed = JSON.parse(creds);
+          if (parsed.password === "password123") {
+            statusPill.className = "status-pill pill-200";
+            statusPill.innerText = "HTTP 200 OK";
+            respView.innerText = JSON.stringify({
+              success: true,
+              statusCode: 200,
+              message: "Authentication successful",
+              data: {
+                token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbIlJPTEVfQURNSU4iXSwiaWF0IjoxNzM1NzAwMDAwLCJleHAiOjE3MzU3ODY0MDB9.4g87h3rK9...zL",
+                tokenType: "Bearer",
+                username: parsed.username,
+                roles: ["ROLE_ADMIN"],
+                expiresIn: 86400000
+              }
+            }, null, 2);
+            setFlowMode("login");
+          } else {
+            statusPill.className = "status-pill pill-401";
+            statusPill.innerText = "HTTP 401 UNAUTHORIZED";
+            respView.innerText = JSON.stringify({
+              success: false,
+              statusCode: 401,
+              message: "Invalid username or password",
+              data: null
+            }, null, 2);
+          }
+        } catch(e) {
+          respView.innerText = "JSON parse error in credentials";
+        }
+        return;
+      }
+
+      if (endpoint === "/api/foods/health") {
+        statusPill.className = "status-pill pill-200";
+        statusPill.innerText = "HTTP 200 OK (Public)";
+        respView.innerText = JSON.stringify({
+          success: true,
+          statusCode: 200,
+          message: "Foodstore API is up and running!",
+          data: null
+        }, null, 2);
+        return;
+      }
+
+      // Protected endpoints (/api/foods, /api/users)
+      if (mode === "none") {
+        statusPill.className = "status-pill pill-401";
+        statusPill.innerText = "HTTP 401 UNAUTHORIZED";
+        respView.innerText = JSON.stringify({
+          success: false,
+          statusCode: 401,
+          message: "Unauthorized: Full authentication is required to access this resource",
+          data: null
+        }, null, 2);
+        setFlowMode("unauthorized");
+        return;
+      }
+
+      if (mode === "expired" || mode === "tampered") {
+        statusPill.className = "status-pill pill-401";
+        statusPill.innerText = "HTTP 401 UNAUTHORIZED";
+        respView.innerText = JSON.stringify({
+          success: false,
+          statusCode: 401,
+          message: mode === "expired" 
+            ? "Unauthorized: JWT expired at 2024-09-13T12:00:00Z" 
+            : "Unauthorized: JWT signature does not match locally computed signature",
+          data: null
+        }, null, 2);
+        setFlowMode("unauthorized");
+        return;
+      }
+
+      if (endpoint === "/api/users" && mode === "valid_user") {
+        statusPill.className = "status-pill pill-401";
+        statusPill.innerText = "HTTP 403 FORBIDDEN";
+        respView.innerText = JSON.stringify({
+          success: false,
+          statusCode: 403,
+          message: "Access Denied: User has ROLE_USER but endpoint requires ROLE_ADMIN",
+          data: null
+        }, null, 2);
+        return;
+      }
+
+      // Valid case
+      statusPill.className = "status-pill pill-200";
+      statusPill.innerText = "HTTP 200 OK";
+      if (endpoint === "/api/foods") {
+        respView.innerText = JSON.stringify({
+          success: true,
+          statusCode: 200,
+          message: "Foods retrieved successfully",
+          data: [
+            { id: 1, name: "Margherita Pizza", price: 12.99, categoryId: 1, imageUrl: "https://images.unsplash.com/photo-1513104802838-83d67069a010" },
+            { id: 2, name: "Classic Cheeseburger", price: 9.50, categoryId: 2, imageUrl: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd" }
+          ]
+        }, null, 2);
+        setFlowMode("authenticated");
+      } else {
+        respView.innerText = JSON.stringify({
+          success: true,
+          statusCode: 201,
+          message: "User created successfully by ADMIN",
+          data: { id: 10, name: "new_staff", role: "ROLE_USER" }
+        }, null, 2);
+      }
+    }
+
+    // Auto load on start
+    window.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>
